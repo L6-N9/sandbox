@@ -13,9 +13,8 @@ import { RUNTIMES } from "./constants";
 import { Snapshot } from "./snapshot";
 import { consumeReadable } from "./utils/consume-readable";
 import {
-  toAPINetworkPolicy,
   type NetworkPolicy,
-} from "./utils/network-policy";
+} from "./network-policy";
 
 export type { NetworkPolicy };
 
@@ -253,7 +252,7 @@ export class Sandbox {
       timeout: params?.timeout,
       resources: params?.resources,
       runtime: params && "runtime" in params ? params?.runtime : undefined,
-      networkPolicy: toAPINetworkPolicy(params?.networkPolicy),
+      networkPolicy: params?.networkPolicy,
       signal: params?.signal,
       ...privateParams,
     });
@@ -638,25 +637,20 @@ export class Sandbox {
    * @example
    * // Restrict to specific domains
    * await sandbox.updateNetworkPolicy({
-   *   type: "restricted",
-   *   allowedDomains: ["*.npmjs.org", "github.com"],
+   *   allow: ["*.npmjs.org", "github.com"],
    * });
    *
    * @example
    * // Deny all network access
-   * await sandbox.updateNetworkPolicy({ type: "no-access" });
+   * await sandbox.updateNetworkPolicy("deny-all");
    */
   async updateNetworkPolicy(
     networkPolicy: NetworkPolicy,
     opts?: { signal?: AbortSignal },
-  ): Promise<void> {
-    const apiNetworkPolicy = toAPINetworkPolicy(networkPolicy);
-    if (!apiNetworkPolicy) {
-      throw new Error("Invalid network policy");
-    }
-    await this.client.updateNetworkPolicy({
+  ): Promise<NetworkPolicy> {
+    return this.client.updateNetworkPolicy({
       sandboxId: this.sandbox.id,
-      networkPolicy: apiNetworkPolicy,
+      networkPolicy: networkPolicy,
       signal: opts?.signal,
     });
   }
